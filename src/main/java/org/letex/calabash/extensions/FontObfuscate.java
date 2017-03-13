@@ -62,6 +62,12 @@ public class FontObfuscate extends DefaultStep {
 		fex.printStackTrace();
 	    }
 	}
+
+    /** credits to Eliot Kimber and Adobe, code below was taken from these sources:
+      *
+      * http://blogs.adobe.com/digitaleditions/2009/05/font_mangling_code_available_f.html 
+      * https://github.com/dita4publishers/epub-font-obfuscator/
+      */
     
     /** Implements the Obfuscation Algorithm from 
       * http://www.openebook.org/doc_library/informationaldocs/FontManglingSpec.html
