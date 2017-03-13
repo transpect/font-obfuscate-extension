@@ -9,20 +9,25 @@ import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import java.net.URI;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.QName;
+import net.sf.saxon.s9api.XdmNode;
 
 import com.xmlcalabash.core.XProcException;
 import com.xmlcalabash.core.XProcRuntime;
+import com.xmlcalabash.core.XProcConstants;
 import com.xmlcalabash.io.ReadablePipe;
 import com.xmlcalabash.io.WritablePipe;
 import com.xmlcalabash.library.DefaultStep;
 import com.xmlcalabash.runtime.XAtomicStep;
 import com.xmlcalabash.model.RuntimeValue;
+import com.xmlcalabash.util.TreeWriter;
 
 public class FontObfuscate extends DefaultStep {
     private WritablePipe result = null;
@@ -48,20 +53,56 @@ public class FontObfuscate extends DefaultStep {
 	    // submit empty string if attribute is not set
 	    String fileString = (file != null) ? file.getString() : "";
 	    String uidString  = (uid  != null) ? uid.getString()  : "";
-	    
 	    try{
-		InputStream in = new FileInputStream(fileString);		
+		InputStream in = new FileInputStream(fileString);
 
 		String obfuscationKey = makeObfuscationKey(uidString);
 		try(OutputStream out = new FileOutputStream(fileString + ".tmp")){
+		    URI baseuri = new File(fileString).getCanonicalFile().toURI();
 		    serialize(in, out, obfuscationKey);
+		    XdmNode XMLResult = createXMLResult(fileString, baseuri, runtime);
+		    result.write(XMLResult);
 		}catch (IOException ioex) {
-
+                    System.out.println("[ERROR] " + ioex.getMessage());
+		    result.write(createXMLError(ioex.getMessage(), fileString, runtime));
 		}
 	    } catch (FileNotFoundException fex){
+		System.out.println("[ERROR] " + fex.getMessage());
+		result.write(createXMLError(fex.getMessage(), fileString, runtime));
 		fex.printStackTrace();
 	    }
 	}
+
+    private static XdmNode createXMLResult(String fileString, URI baseuri, XProcRuntime runtime) throws SaxonApiException {
+	QName xml_base = new QName("xml", "http://www.w3.org/XML/1998/namespace" ,"base");
+	QName c_files = new QName("c", "http://www.w3.org/ns/xproc-step" ,"files");
+	QName c_file = new QName("c", "http://www.w3.org/ns/xproc-step" ,"file");
+	TreeWriter tree = new TreeWriter(runtime);
+	tree.startDocument(baseuri);
+	tree.addStartElement(c_files);
+	tree.addAttribute(xml_base, baseuri.toString());
+	tree.addStartElement(c_file);
+	tree.addAttribute(new QName("name"), fileString);
+	tree.addEndElement();
+	tree.addEndElement();
+	tree.endDocument();
+	return tree.getResult();
+    }
+
+    private XdmNode createXMLError(String message, String fileString, XProcRuntime runtime) throws SaxonApiException {
+	TreeWriter tree = new TreeWriter(runtime);
+	tree.startDocument(step.getNode().getBaseURI());
+	tree.addStartElement(XProcConstants.c_errors);
+	tree.addAttribute(new QName("code"), "internal-error");
+	tree.addAttribute(new QName("href"), fileString);
+	tree.addStartElement(XProcConstants.c_error);
+	tree.addAttribute(new QName("code"), "error");
+	tree.addText(message);
+	tree.addEndElement();
+	tree.addEndElement();
+	tree.endDocument();
+	return tree.getResult();
+    }
 
     /** credits to Eliot Kimber and Adobe, code below was taken from these sources:
       *
