@@ -8,10 +8,13 @@
 
   <p:option name="file" required="true"/>
 
+  <p:option name="uid" required="true"/>
+  
   <p:import href="font-obfuscate-declaration.xpl"/>
 
   <tr:font-obfuscate name="font-obfuscate">
     <p:with-option name="file" select="$file"/>
+    <p:with-option name="uid" select="$uid"/>
   </tr:font-obfuscate>
 
 </p:declare-step>

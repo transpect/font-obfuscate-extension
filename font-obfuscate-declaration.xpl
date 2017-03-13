@@ -12,4 +12,6 @@
   
   <p:option name="file" required="true"/>
 
+  <p:option name="uid" required="true"/>
+  
 </p:declare-step>
