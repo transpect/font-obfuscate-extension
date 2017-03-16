@@ -1,4 +1,4 @@
-package org.letex.calabash.extensions;
+package io.transpect.calabash.extensions;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
